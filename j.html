@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Surprise for Mom</title>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script&family=Inter:wght@400;600&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --bg-red: #9e0000;
+            --bg-pink: #ffc0cb;
+            --pink-light: #ffdada;
+            --pink-dark: #f1a7a7;
+            --text-red: #800000;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            margin: 0;
+            background-color: var(--bg-red);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.8s ease;
+            color: white;
+            padding: 20px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* --- Floating Hearts Background --- */
+        .bg-heart {
+            position: fixed;
+            bottom: -50px;
+            font-size: 20px;
+            user-select: none;
+            pointer-events: none;
+            z-index: 0;
+            animation: floatUp linear infinite;
+        }
+
+        @keyframes floatUp {
+            from { transform: translateY(0) rotate(0deg); opacity: 1; }
+            to { transform: translateY(-110vh) rotate(360deg); opacity: 0; }
+        }
+
+        /* --- Passcode Screen --- */
+        #passcode-screen {
+            z-index: 2;
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        @media (max-width: 768px) {
+            #passcode-screen { flex-direction: column; gap: 30px; }
+            .polaroid-container { transform: rotate(0deg) !important; }
+        }
+
+        .polaroid-container {
+            background: white;
+            padding: 10px 10px 30px 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            transform: rotate(-3deg);
+            max-width: 250px;
+        }
+        .polaroid-container img { width: 100%; height: auto; display: block; }
+        .caption { font-family: 'Dancing Script', cursive; color: var(--bg-red); font-size: 1.5rem; text-align: center; margin-top: 15px; }
+
+        .keypad-section { text-align: center; }
+        .passcode-display { display: flex; gap: 10px; justify-content: center; margin: 15px 0 25px 0; }
+        .dot-box { width: 40px; height: 40px; border: 2px solid white; border-radius: 8px; display: flex; justify-content: center; align-items: center; }
+        .dot-box.filled { background: white; color: var(--bg-red); }
+
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .key { 
+            width: 60px; height: 60px; background: var(--pink-light); border-radius: 50%; 
+            display: flex; justify-content: center; align-items: center; 
+            color: var(--bg-red); font-weight: bold; cursor: pointer;
+        }
+        .key:active { background: var(--pink-dark); transform: scale(0.9); }
+
+        /* --- Surprise Section --- */
+        #surprise-screen {
+            display: none; text-align: center; color: var(--text-red); z-index: 2; width: 100%;
+        }
+
+        .hearts-container { display: flex; gap: 15px; justify-content: center; margin: 30px 0; flex-wrap: wrap; }
+        .heart-gift { width: 150px; cursor: pointer; opacity: 0; transform: scale(0); transition: transform 0.3s; }
+
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0); }
+            70% { opacity: 1; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        .animate-heart { animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+        /* --- Message Box (Like Image Style) --- */
+        #message-box {
+            display: none;
+            background: #ffffff;
+            background: linear-gradient(to bottom, #ffffff 0%, #f7f7f7 100%);
+            padding: 30px;
+            border-radius: 12px;
+            width: 95%;
+            max-width: 500px;
+            margin: 20px auto;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            direction: rtl; 
+            border: 1px solid #eee;
+            /* No max-height or overflow to avoid scrollbar */
+        }
+
+        .arabic-text {
+            font-family: 'Amiri', serif;
+            font-size: 1.2rem;
+            color: #333;
+            line-height: 1.8;
+            white-space: pre-line;
+            text-align: right;
+        }
+
+        .hidden { display: none !important; }
+        .shake { animation: shake 0.3s ease-in-out; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+    </style>
+</head>
+<body>
+
+    <div id="bg-hearts-container"></div>
+
+    <div id="passcode-screen">
+        <div class="polaroid-container">
+            <img src="https://images.unsplash.com/photo-1518199266791-5375a83190b7?q=80&w=500" alt="Mom">
+            <div class="caption">my mom and i</div>
+        </div>
+
+        <div class="keypad-section">
+            <p>Enter a passcode</p>
+            <div class="passcode-display" id="display-container">
+                <div class="dot-box"></div><div class="dot-box"></div><div class="dot-box"></div><div class="dot-box"></div>
+            </div>
+            <div class="grid" id="keypad">
+                <div class="key">1</div><div class="key">2</div><div class="key">3</div>
+                <div class="key">4</div><div class="key">5</div><div class="key">6</div>
+                <div class="key">7</div><div class="key">8</div><div class="key">9</div>
+                <div class="key">*</div><div class="key">0</div><div class="key">#</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="surprise-screen">
+        <h2 id="title" style="font-family: 'Amiri'; font-size: 2.2rem; margin: 10px;">لأغلى الناس ❤️</h2>
+        <div class="hearts-container" id="hearts-wrapper">
+            <img src="https://cdn-icons-png.flaticon.com/512/2904/2904973.png" class="heart-gift" onclick="openGift()">
+            <img src="https://cdn-icons-png.flaticon.com/512/2904/2904973.png" class="heart-gift" onclick="openGift()">
+            <img src="https://cdn-icons-png.flaticon.com/512/2904/2904973.png" class="heart-gift" onclick="openGift()">
+        </div>
+        <div id="message-box">
+            <div class="arabic-text">
+أمي 💞
+
+كل سنة وانتي طيبة يا أحلى وأغلى حد في حياتي 💗💗
+
+بجد مش عارف أقولك إيه يوفي حقك… انتي مش بس أمي، انتي كنتي ليا الأب والأم، السند والأمان، وكل حاجة حلوة في حياتي.
+كل تعبك عشاني، كل مرة وقفتي جنبي فيها، كل مرة شيلتي عني همي… أنا عمري ما هنساها 💖💖
+
+أنا عارف إني ساعات بتعصب أو بزعلِك مني، وده والله مش قصدي أبدًا… فـ حقك عليا يا ماما، سامحيني 🪷💖
+
+أنا بحبك أكتر من أي حاجة في الدنيا، ويمكن مش بعرف أقولها كتير… بس انتي كل حياتي والله 💖
+
+ربنا يخليكي ليا وميحرمنيش منك أبدًا 🤲💝
+بحبك يا أحلي ام 💕
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const correctPin = "1988"; 
+        let currentInput = "";
+
+        // Floating Hearts Background logic
+        function createFloatingHeart() {
+            const container = document.getElementById('bg-hearts-container');
+            const heart = document.createElement('div');
+            heart.classList.add('bg-heart');
+            heart.innerHTML = '❤️';
+            heart.style.left = Math.random() * 100 + 'vw';
+            heart.style.animationDuration = (Math.random() * 3 + 2) + 's'; // 2-5s speed
+            heart.style.opacity = Math.random() * 0.5 + 0.3; // Random transparency
+            container.appendChild(heart);
+            
+            setTimeout(() => { heart.remove(); }, 5000);
+        }
+        setInterval(createFloatingHeart, 300);
+
+        // Passcode Logic
+        document.getElementById('keypad').addEventListener('click', (e) => {
+            if (e.target.classList.contains('key')) {
+                if (currentInput.length < 4) {
+                    currentInput += e.target.innerText;
+                    updateDots();
+                    if (currentInput.length === 4) checkPin();
+                }
+            }
+        });
+
+        function updateDots() {
+            const dots = document.querySelectorAll('.dot-box');
+            dots.forEach((dot, i) => {
+                dot.innerText = (i < currentInput.length) ? "*" : "";
+                dot.classList.toggle('filled', i < currentInput.length);
+            });
+        }
+
+        function checkPin() {
+            if (currentInput === correctPin) {
+                showSurprise();
+            } else {
+                document.getElementById('display-container').classList.add('shake');
+                setTimeout(() => {
+                    document.getElementById('display-container').classList.remove('shake');
+                    currentInput = "";
+                    updateDots();
+                }, 500);
+            }
+        }
+
+        function showSurprise() {
+            document.getElementById('passcode-screen').classList.add('hidden');
+            document.body.style.backgroundColor = "var(--bg-pink)";
+            document.getElementById('surprise-screen').style.display = "block";
+            const hearts = document.querySelectorAll('.heart-gift');
+            hearts.forEach((heart, i) => {
+                setTimeout(() => heart.classList.add('animate-heart'), i * 200);
+            });
+        }
+
+        function openGift() {
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+            document.getElementById('hearts-wrapper').classList.add('hidden');
+            document.getElementById('message-box').style.display = "block";
+        }
+    </script>
+</body>
+</html>
